@@ -255,7 +255,13 @@ bool MessageManager::sendMessage( QString j, const QString &msg, MessageType t )
 		body.appendChild( text );
 	}
 	
-	return tlen_manager->writeXml( doc );
+	if( tlen_manager->writeXml( doc ) )
+	{
+		emit messageSended( j, msg, t );
+		return true;
+	}
+	
+	return false;
 }
 
 bool MessageManager::sendTypingNotification( QString jid, bool start_typing )
@@ -468,9 +474,13 @@ void MessageManager::errorMessage( QString jid, int errornum, const QString &err
 
 void MessageManager::mailMessage( QString from, const QString &topic )
 {
-	QMessageBox::information( 0, tr("New e-mail"),
-				tr( "<b>From:</b> " ) + plain2rich( from ) + "<br>" +
-				tr( "<b>Topic:</b> " ) + plain2rich( topic ) );
+	QMessageBox *msg = new QMessageBox( tr( "New e-mail" ),
+			"<nobr>" + tr( "<b>From:</b> " ) + plain2rich( from ) + "</nobr><br>" +
+			"<nobr>" + tr( "<b>Topic:</b> " ) + plain2rich( topic ) + "</nobr>",
+			QMessageBox::NoIcon, QMessageBox::Ok, QMessageBox::NoButton, QMessageBox::NoButton, 0, 0, false );
+	
+	msg->setIconPixmap( takePixmap( "mail" ) );
+	msg->show();
 }
 
 //int MessageManager::findWebMessage( const QString &from )

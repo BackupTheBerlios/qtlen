@@ -84,6 +84,8 @@ class MessageManager : public QObject
 		void gotMessage( QString jid, const QString &message, const QDateTime &datetime );
 		void gotChatMessage( QString jid, const QString &message, const QDateTime &datetime );
 		
+		void messageSended( QString j, const QString &msg, MessageType t );
+		
 		void gotErrorMessage( QString jid, int errornum, const QString &errorname, const QString &message, const QDateTime &datetime );
 		
 		void gotNewsMessage( const QString &newsType, const QString &title, const QDateTime &dt, const QString &url, const QString &text );
