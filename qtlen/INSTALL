@@ -1,0 +1,6 @@
+Jak zainstalowaæ program?
+
+jest to w miare proste i nie wymaga to jak w wypadku Tleenx doinstlowywania wielu gogatkowych bibliotek poniewarz ca³y program opiera siê w 100% na bibliotece QT. Aby zainstalowaæ s± wymagane pliki develop (zawierajace wszystkie include i library) Qt co najmniej w wersji 3.1.X (na starszych wersjach program mo¿e te¿ chodziæ ale nie daje gwarancji. Jak ju¿ mamy wszystko gotowe wystarczy tylko wykonaæ nastêpuj±ce instrukcje:
+1. Wywo³aæ polecenie "qmake qtlen.pro" który wygeneruje odpowiednie pliki Makefiles które sa wymagane do kompilacji QTlena,
+2. Po pomy¶lnym wygenerowaniu Makefiles czas skompilowaæ QTlena wydaj±c proste polecenie "make",
+3. Po po wszystkim mam ju¿ skompilowanego QTlena gotowego do odpalenia, aby uruchomiæ go nale¿ przej¶æ do folderu w którym znajduje siê plik wykonywalny i uruchomiæ go (nie u¿ywaj do tego celu programów typu konqueror! najlepsza jest zwyk³a konsola).

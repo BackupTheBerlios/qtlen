@@ -1,0 +1,26 @@
+P: Dlaczego po wykonaniu polecenia qmake otrzymuje komunikat b³edu "bash: qmake: command not found"
+O: Odpowied¼ jest prosta poprostu nie zainstalowa³e¶ odpowiedniego pakietu develop dla swojej dystrybucji.
+
+P: Po wydaniu polecenia make mam du¿o dziwacznych b³edów, dlaczego?
+O: Odpowiedzi mo¿e byæ wiele, jedna z nich np. to ze nie do konca masz zainstalowane QT, druga mo¿liwo¶æ to taka jak kto¶ namiesza³ z ¼róde³kach i w tekim wypadku bym prosi³ o wypisanie wszystkich b³edów na forum QTlena.
+
+P: Podczas kompilacji mam du¿o warning'ów czy to mo¿e wp³yn±æ negatywnie na prace QTlena?
+O: Tak i nie, niektoóre z tych warning'ów sa prostymi b³edami spowodowane albo niedokoñczona funkcja albo innymi ustrojstwami. Lecz czasami takie warningi moga prowadziæ powarzniejsze konsekfencje lecz przewarznie to tylko ma³a uwaga.
+
+P: Dlaczego zawsze jak odpalam QTlena nie ma ¿adnych ikonek?
+O: Jest to spowodowane tym, ¿e narazie nie jest do koñca dodana funkcja obs³ugi zestawów grafik przez co jak odpalimy QTlena w innym folderze ni¿ ten w którym jest zainstalowanym moze pojawiæ sie taki b³±d.
+
+P: Jak zaradziæ temu?
+O: Nale¿y odpaliæ QTlena z folderu w którym sie on znajduje oto ca³a filozofia.
+
+P: Dlaczego po wydaniu komendy qmake nie otrzymuje programu?
+O: Polecenie qmake nie kompiluje programu lecz tylko generuje pliki Makefiles, wymagane przez program make, który w³a¶nie zajmuje siê kompilacj±.
+
+P: Dlaczego nie dzia³a funkcja X, po klikniêciu w jej przycisk nic siê nie pojawia?
+O: Prawdopodobnie funkcja ta nie zosta³a dodana do programu a przycisk zosta³ dodany aby ³atwiej rozplanowaæ interfejs programu.
+
+P: Mam PLD i QTlen nie chce mi siê skompilowaæ, wywala jakie¶ dziwne b³êdy, co mam zrobiæ?
+O: Trzeba wyeksportowaæ zmienn± ¶rodowiskow± QTDIR o warto¶ci "/usr" (export QTDIR="/usr"), pomaga to w 99%
+
+P: Po wykonaniu polecienia qmake qtlen.pro nie otrzymuje ¿adnych komunikatów, czy to normalne?
+O: Tak, to jest naj najnormalniejsze zachowanie QMake, je¿eli siê zachowa innacze oznacza to jaki¶ b³±d.
