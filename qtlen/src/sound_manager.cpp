@@ -173,7 +173,7 @@ void SoundManager::setMute( bool mute )
 	v_mute = mute;
 }
 
-bool SoundManager::getMute()
+bool SoundManager::isMute()
 {
 	return v_mute;
 }
@@ -293,15 +293,17 @@ void SoundManager::changeContactStatus( QString, PresenceManager::PresenceStatus
 
 	settings.beginGroup( "/sounds" );
 	
+	if( status == PresenceManager::Unavailable && settings.readBoolEntry( "/status/unavailable/activated" ) )
+	{
+		play( settings.readEntry( "/status/unavailable/fileName" ) );
+	}
+	
 	if( status == PresenceManager::Available && settings.readBoolEntry( "/status/available/activated" ) )
 	{
 		play( settings.readEntry( "/status/available/fileName" ) );
 	}
-	else if( status == PresenceManager::Unavailable && settings.readBoolEntry( "/status/unavailable/activated" ) )
-	{
-		play( settings.readEntry( "/status/unavailable/fileName" ) );
-	}
-	else if( settings.readBoolEntry( "/status/away/activated" ) )
+	
+	if( status != PresenceManager::Unavailable && status != PresenceManager::Available &&  settings.readBoolEntry( "/status/away/activated" ) )
 	{
 		play( settings.readEntry( "/status/away/fileName" ) );
 	}
