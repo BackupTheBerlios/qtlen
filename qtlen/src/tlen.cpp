@@ -24,6 +24,7 @@
 #include <qurl.h>
 #include <qmessagebox.h>
 #include <qsettings.h>
+#include <iostream>
 
 #include "tlen.h"
 #include "utils.h"
@@ -118,7 +119,7 @@ void Tlen::disconnect()
 		
 		data = "</s>";
 		if( socket->writeBlock( data.data(), data.length() ) == (int)data.length() )
-			qDebug("Write on socket: "+data);
+			std::cout << "Write on socket: " << data << std::endl;
 	}
 	
 	socket->close();
@@ -142,7 +143,7 @@ bool Tlen::tlenLogin()
 	ok = ( socket->writeBlock( data.data(), data.length() ) == (int)data.length() );
 	
 	if(ok)
-		qDebug("Send data:\n"+data);
+		std::cout << "Write on socket: " << data << std::endl;
 	
 	return ok;
 }
@@ -153,6 +154,9 @@ bool Tlen::writeXml( const QDomDocument& doc )
 		return false;
 	
 	QString data = doc.toString();
+	
+	std::cout << "Write on socket: " << data << std::endl;
+	
 	return socket->writeBlock( data.data(), data.length() ) == (int)data.length();
 }
 
@@ -161,13 +165,16 @@ void Tlen::socketReadyRead()
 	QCString s;
 	s.resize( socket->bytesAvailable() );
 	socket->readBlock( s.data(), socket->bytesAvailable() );
+	
 	s.insert( 0, "<s>" );
 	s.append( "</s>" );
 	
 	QDomDocument doc;
 	doc.setContent( s );
 	QDomNode root = doc.firstChild();
-	//qDebug( "Receive data:\n" + doc.toString() );
+	
+	std::cout << "Read from socket: " << doc.toString() << std::endl;
+	
 	if( root.hasChildNodes() )
 	{
 		for(QDomNode n = root.firstChild();
@@ -288,9 +295,7 @@ bool Tlen::isConnected()
 void Tlen::setUserPass( const QString &user, const QString &pass)
 {
 	username = user;
-	qDebug("\nUser was set on: "+user+"");
 	password = pass;
-	qDebug("Password was set on: <hidden>\n");
 }
 
 QString Tlen::getJid()
@@ -305,11 +310,12 @@ void Tlen::socketConnected()
 {
 	emit connecting();
 	
-	QString data = "<s v='3'>";
+	QString data = "<s v=\"7\" t=\"05170402\">";
 	
 	state = Tlen::Connecting;
 	
-	socket->writeBlock( data.latin1(), data.length() );
+	if( socket->writeBlock( data.latin1(), data.length() ) == (int)data.length() )
+		std::cout << "Write on socket: " << data << std::endl;
 }
 
 void Tlen::sendPing()
