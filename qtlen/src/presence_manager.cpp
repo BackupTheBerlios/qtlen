@@ -263,8 +263,15 @@ void PresenceManager::subscribeContact( QString jid ) //Kto¶ wysy³a pro¶bê o sub
 	if( roster_manager->roster[ index ].subscription == "both" )
 	{
 		subscribedMe( jid );
+		return;
 	}
-	else if( QMessageBox::question( qApp->mainWidget(), "QTlen", "<b>" + jid + "</b>\n" + tr( "This contact want to subscribe you.\nDo you want to add this to your roster?" ), QMessageBox::Yes | QMessageBox::Default, QMessageBox::No | QMessageBox::Escape ) == QMessageBox::Yes )
+	
+	QMessageBox *msg = new QMessageBox( "QTlen", "<b>" + jid + "</b>\n" + tr( "This contact want to subscribe you.\nDo you want to add this to your roster?" ), QMessageBox::NoIcon, QMessageBox::Yes | QMessageBox::Default, QMessageBox::No | QMessageBox::Escape, QMessageBox::NoButton, qApp->mainWidget() );
+	
+	msg->setIconPixmap( takePixmap( "messagebox_question" ) );
+	//msg->show();
+	
+	if( msg->exec() == QMessageBox::Yes )
 	{
 		roster_manager->addContact( jid );
 		
@@ -309,7 +316,7 @@ void PresenceManager::unsubscribeContakt( QString jid ) //Kto¶ wysy³a pro¶bê o d
 	}
 }
 
-void PresenceManager::unsubscribedContakt( QString jid ) //Kto¶ zgadza siê na desubskrybcjê
+void PresenceManager::unsubscribedContakt( QString ) //Kto¶ zgadza siê na desubskrybcjê
 {
 	//Nie op³aca siê go usunaæ bo juz ktos mi o tym mowil
 	//if( roster_manager->isExist( jid ) )
