@@ -44,7 +44,7 @@ class SoundManager : public QObject
 		void play( const QString &fileName );
 		
 		void setMute( bool mute );
-		bool getMute();
+		bool isMute();
 		
 	private:
 		bool v_mute;
@@ -66,9 +66,6 @@ class SoundManager : public QObject
 		void unsubscribe( QString );
 		
 		void changeContactStatus( QString, PresenceManager::PresenceStatus status, const QString& );
-		
-	signals:
-		void muted( bool );
 };
 
 extern SoundManager *sound_manager;
