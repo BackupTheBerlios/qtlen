@@ -24,6 +24,7 @@
 #include <qurl.h>
 #include <qmessagebox.h>
 #include <qsettings.h>
+#include <qregexp.h>
 #include <iostream>
 
 #include "tlen.h"
@@ -63,9 +64,11 @@ void Tlen::initModule()
 Tlen::Tlen() : QObject()
 {
 	state = Tlen::Disconnected;
+	
 	socket = new QSocket();
+	
 	pingtimer = new QTimer();
-
+	
 	connect( socket, SIGNAL( connected() ), SLOT( socketConnected() ) );
 	connect( this, SIGNAL( connected() ), SLOT( tlenConnected() ) );
 	connect( socket, SIGNAL( connectionClosed() ), SLOT( socketConnectionClosed() ) );
@@ -74,7 +77,7 @@ Tlen::Tlen() : QObject()
 	connect( pingtimer, SIGNAL( timeout() ), SLOT( sendPing() ) );
 	
 	connect( this, SIGNAL( disconnected() ), presence_manager, SLOT( disconnected() ) );
-
+	
 	hostname = "s1.tlen.pl";
 	hostport = 443;
 }
@@ -162,18 +165,55 @@ bool Tlen::writeXml( const QDomDocument& doc )
 
 void Tlen::socketReadyRead()
 {
-	QCString s;
-	s.resize( socket->bytesAvailable() );
-	socket->readBlock( s.data(), socket->bytesAvailable() );
+	QDomDocument doc;
+	QCString s, buf;
+	Q_LONG len = 1024*1024;
+	Q_LONG pos;
+	QRegExp startTarg( "<[^/](.+)[^/]>" );
+	QRegExp endTarg( "</(.+)[^/]>" );
+	int countHome, countEnd, expos;
 	
-	s.insert( 0, "<s>" );
+	s.resize( socket->bytesAvailable() );
+	buf.resize( socket->bytesAvailable() );
+	
+	//while( len > 0 )
+	do
+	{
+		countHome = 0;
+		countEnd = 0;
+		expos = 0;
+		
+		pos = socket->readBlock( buf.data(), len );
+		
+		if( pos == 0 || pos == -1 )
+			break;
+		
+		s.append( buf );
+		
+		len -= pos; 
+		
+		while ( ( expos = startTarg.search( s, expos ) ) != -1 ) {
+			countHome++;
+			expos += startTarg.matchedLength();
+		}
+		
+		expos = 0;
+		
+		while ( ( expos = endTarg.search( s, expos ) ) != -1 ) {
+			countEnd++;
+			expos += endTarg.matchedLength();
+		}
+	}
+	while( countHome != countEnd );
+	
+	std::cout << "Read from socket: " << s << std::endl;
+	
+	s.prepend( "<s>" );
 	s.append( "</s>" );
 	
-	QDomDocument doc;
 	doc.setContent( s );
-	QDomNode root = doc.firstChild();
 	
-	std::cout << "Read from socket: " << doc.toString() << std::endl;
+	QDomNode root = doc.firstChild();
 	
 	if( root.hasChildNodes() )
 	{
@@ -184,6 +224,8 @@ void Tlen::socketReadyRead()
 			event( n );
 		}
 	}
+	
+	delete s, buf, homeTarg, endTarg;
 }
 
 void Tlen::event(QDomNode node)
