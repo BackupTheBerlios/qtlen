@@ -225,7 +225,7 @@ void Tlen::socketReadyRead()
 		}
 	}
 	
-	delete s, buf, homeTarg, endTarg;
+	delete s, buf, startTarg, endTarg;
 }
 
 void Tlen::event(QDomNode node)
