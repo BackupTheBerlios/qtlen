@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <qobject.h>
+#include <qtextstream.h>
 #include <qdom.h>
 #include <qsocket.h>
 #include <qurl.h>
@@ -26,6 +27,7 @@
 #include <qsettings.h>
 #include <qregexp.h>
 #include <iostream>
+#include <qtimer.h>
 
 #include "tlen.h"
 #include "utils.h"
@@ -38,6 +40,37 @@
 #include "hub_manager.h"
 
 Tlen *tlen_manager = NULL;
+
+bool QTlenParser::startDocument()
+{
+	elementsCount = 0;
+	
+	return true;
+}
+
+bool QTlenParser::startElement( const QString&, const QString&, const QString &qName, const QXmlAttributes& )
+{
+	if( qName == "s" && elementsCount == 0 )
+		stream = true;
+	
+	elementsCount++;
+	
+	return true;
+}
+
+bool QTlenParser::endElement( const QString&, const QString&, const QString& )
+{
+	elementsCount--;
+	
+	return true;
+}
+
+bool QTlenParser::endDocument()
+{
+	if( elementsCount == 0 || stream )
+		return true;
+	return false;
+}
 
 void Tlen::initModule()
 {
@@ -53,7 +86,7 @@ void Tlen::initModule()
 	if( settings.readBoolEntry( "/autoConnect", false ) )
 	{
 		presence_manager->setStatus( (PresenceManager::PresenceStatus)settings.readNumEntry( "/defaultStatus" ),
-						settings.readEntry( "/defaultDescription" ) );
+					      settings.readEntry( "/defaultDescription" ) );
 	}
 	
 	HubManager::initModule();
@@ -165,67 +198,54 @@ bool Tlen::writeXml( const QDomDocument& doc )
 
 void Tlen::socketReadyRead()
 {
-	QDomDocument doc;
-	QCString s, buf;
-	Q_LONG len = 1024*1024;
-	Q_LONG pos;
-	QRegExp startTarg( "<[^/](.+)[^/]>" );
-	QRegExp endTarg( "</(.+)[^/]>" );
-	int countHome, countEnd, expos;
-	
-	s.resize( socket->bytesAvailable() );
+	QCString buf;
 	buf.resize( socket->bytesAvailable() );
+	socket->readBlock( buf.data(), socket->bytesAvailable() );
 	
-	//while( len > 0 )
-	do
-	{
-		countHome = 0;
-		countEnd = 0;
-		expos = 0;
-		
-		pos = socket->readBlock( buf.data(), len );
-		
-		if( pos == 0 || pos == -1 )
-			break;
-		
-		s.append( buf );
-		
-		len -= pos; 
-		
-		while ( ( expos = startTarg.search( s, expos ) ) != -1 ) {
-			countHome++;
-			expos += startTarg.matchedLength();
-		}
-		
-		expos = 0;
-		
-		while ( ( expos = endTarg.search( s, expos ) ) != -1 ) {
-			countEnd++;
-			expos += endTarg.matchedLength();
-		}
-	}
-	while( countHome != countEnd );
+	stream.append( buf.replace( "\0", "" ) );
 	
-	std::cout << "Read from socket: " << s << std::endl;
+	if( stream.isEmpty() )
+		return;
+	
+	QString s = stream;
 	
 	s.prepend( "<s>" );
 	s.append( "</s>" );
 	
-	doc.setContent( s );
+	QXmlSimpleReader reader;
+	QXmlInputSource source;
+	source.setData( s );
+	
+	QTlenParser handler;
+	reader.setContentHandler( &handler );
+	
+	if( !reader.parse( &source, false ) && stream.left( 3 ) != "<s " )
+	{
+		std::cout << handler.errorString() << std::endl;
+		return;	
+	}
+	
+	std::cout << "Read from socket: " << stream << std::endl;
+	
+	stream.prepend( "<s>" );
+	stream.append( "</s>" );
+	
+	QDomDocument doc;
+	doc.setContent( stream );
 	
 	QDomNode root = doc.firstChild();
 	
 	if( root.hasChildNodes() )
 	{
 		for(QDomNode n = root.firstChild();
-			!n.isNull();
-			n = n.nextSibling())
+		    !n.isNull();
+		    n = n.nextSibling())
 		{
 			event( n );
 		}
 	}
 	
-	delete s, buf, startTarg, endTarg;
+	stream = QString::null;
 }
 
 void Tlen::event(QDomNode node)
@@ -309,7 +329,7 @@ void Tlen::socketConnectionClosed()
 
 bool Tlen::isConnected()
 {
-    qDebug("Tlen::isConnected()");
+	qDebug("Tlen::isConnected()");
 
 	switch(state)
 	{

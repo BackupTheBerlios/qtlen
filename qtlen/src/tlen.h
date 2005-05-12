@@ -1,6 +1,6 @@
 /***************************************************************************
- *   Copyright (C) 2004 by Zwierzak                                        *
- *   zwierzak@programista.org                                              *
+ *   Copyright (C) 2004-2005 by Zwierzak                                   *
+ *   zwierzak2003@gmail.com                                                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -24,15 +24,42 @@
 #include <qstring.h>
 #include <qcstring.h>
 #include <qobject.h>
-#include <qtimer.h>
 #include <qdom.h>
+#include <qxml.h>
 
 class QSocket;
+class QTimer;
+
+class QTlenParser : public QXmlDefaultHandler
+{
+	public:
+		bool startDocument();
+		bool startElement( const QString&, const QString&, const QString&, const QXmlAttributes& );
+		bool endElement( const QString&, const QString&, const QString& );
+		bool endDocument();
+		
+		bool skippedEntity( const QString& ) { return true; };
+		bool characters( const QString& ) { return true; };
+		
+		bool startCDATA() { return true; };
+		bool startDTD( const QString&, const QString&, const QString& ) { return true; };
+		bool startEntity( const QString& ) { return true; };
+		bool startPrefixMapping(const QString&, const QString& ) { return true; };
+		
+		bool endCDATA() { return true; };
+		bool endDTD() { return true; };
+		bool endEntity( const QString& ) { return true; };
+		bool endPrefixMapping( const QString& ) { return true; };
+		
+	private:
+		int elementsCount;
+		bool stream;
+};
 
 class Tlen : public QObject
 {
-		Q_OBJECT
-
+	Q_OBJECT
+		
 	public:
 		enum ConnectionState { ConnectingToHub = 0,Connecting = 1, Connected = 2, ErrorDisconnected = 3, Disconnected = 4 };
 		
@@ -60,6 +87,8 @@ class Tlen : public QObject
 		QSocket *socket;
 		QString hostname;
 		Q_UINT16 hostport;
+		
+		QString stream;
 		
 		QTimer *pingtimer, *errortimer;
 		
