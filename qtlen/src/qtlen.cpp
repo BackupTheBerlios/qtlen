@@ -17,46 +17,48 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#include <qlayout.h>
 
-#include <qpixmap.h>
-#include <qiconset.h>
-#include <qinputdialog.h>
+#include <qapplication.h>
+#include <qpopupmenu.h>
 #include <qtoolbar.h>
 #include <qtoolbutton.h>
-#include <qapplication.h>
-#include <qsettings.h>
-#include <qmessagebox.h>
 #include <qtooltip.h>
+#include <qmessagebox.h>
+#include <qinputdialog.h>
+#include <qsettings.h>
+#include <qpixmap.h>
+#include <qiconset.h>
 #include <qpoint.h>
 #include <qcursor.h>
 
 #include "qtlen.h"
 #include "tlen.h"
-#include "message.h"
-#include "chat.h"
 #include "message_manager.h"
+//#include "history_manager.h"
 #include "utils.h"
 #include "settingsdialog.h"
 #include "roster_manager.h"
+#include "roster_box.h"
 #include "presence_manager.h"
 #include "pubdir_manager.h"
 #include "sound_manager.h"
 #include "editdlg.h"
+#include "trayicon.h"
 
 QTlen::QTlen( QWidget *parent, const char *name )
 	: QMainWindow( parent, name ),
-	  v_tray( false )
+	  v_tray( false ),
+	  v_quit( false )
 {
 	QSettings settings;
 	settings.setPath( "qtlen.sf.net", "QTlen" );
 	
-	settings.beginGroup( "/window/main" );
+	settings.beginGroup( "/window" );
 	
-	setGeometry( settings.readNumEntry( "/xpos", 50 ),
-				settings.readNumEntry( "/ypos", 50 ),
-				settings.readNumEntry( "/width", 225 ),
-				settings.readNumEntry( "/height", 450 ) );
+	setGeometry( settings.readNumEntry( "/main/xpos", 50 ),
+			settings.readNumEntry( "/main/ypos", 50 ),
+			settings.readNumEntry( "/main/width", 225 ),
+			settings.readNumEntry( "/main/height", 450 ) );
 	
 	settings.resetGroup();
 	
@@ -81,13 +83,9 @@ QTlen::QTlen( QWidget *parent, const char *name )
 	addToolBars();
 	
 	if( settings.readBoolEntry( "/trayicon/activated" ) )
-	{
 		activeTrayIcon();
-	}
 	else
-	{
 		v_quit = true;
-	}
 	
 	settings.resetGroup();
 	
@@ -133,6 +131,8 @@ void QTlen::disactiveTrayIcon()
 {
 	if( v_tray )
 	{
+		tray->gotCloseEvent();
+		
 		if( trayPopup )
 			delete trayPopup;
 		if( tray )
@@ -169,11 +169,8 @@ void QTlen::updateTrayIcon()
 
 QTlen::~QTlen()
 {
-	if( tray )
-	{
-		tray->gotCloseEvent();
-		delete tray;
-	}
+	if( v_tray )
+		disactiveTrayIcon();
 	
 	if( roster )
 		delete roster;
@@ -219,14 +216,16 @@ void QTlen::closeEvent( QCloseEvent* ce )
 		QSettings settings;
 		settings.setPath( "qtlen.sf.net", "QTlen" );
 		
-		settings.beginGroup( "/window/main" );
+		settings.beginGroup( "/window" );
 		
-		settings.writeEntry( "/xpos", x() );
-		settings.writeEntry( "/ypos", y() );
-		settings.writeEntry( "/width", width() );
-		settings.writeEntry( "/height", height() );
+		showNormal();
 		
-		settings.endGroup();
+		settings.writeEntry( "/main/xpos", x() );
+		settings.writeEntry( "/main/ypos", y() );
+		settings.writeEntry( "/main/width", width() );
+		settings.writeEntry( "/main/height", height() );
+		
+		settings.resetGroup();
 		
 		if(tlen_manager->isConnected())
 			presence_manager->setStatus( PresenceManager::Unavailable, presence_manager->getDescription() );
@@ -237,7 +236,10 @@ void QTlen::closeEvent( QCloseEvent* ce )
 	{
 		ce->ignore();
 		
-		showHide();
+		if( isHidden() )
+			show();
+		else
+			hide();
 	}
 }
 
@@ -249,7 +251,15 @@ void QTlen::addToolBars()
 
 	(void)new QToolButton( QIconSet( takePixmap( "add" ) ), tr( "Add new contact" ), QString::null, this, SLOT( addContact() ), tools );
 	(void)new QToolButton( QIconSet( takePixmap( "find" ) ), tr( "Find friends" ), QString::null, this, SLOT( seekContact() ), tools );
+	
 	tools->addSeparator();
+	
+	b_mute = new QToolButton( QIconSet( takePixmap( "mute" ) ), tr( "Mute sounds" ), QString::null, this, SLOT( mute() ), tools );
+	b_mute->setToggleButton( true );
+	b_mute->setOn( sound_manager->isMute() );
+	
+	tools->addSeparator();
+	
 	b_showAway = new QToolButton( QIconSet( takePixmap( "away" ) ), tr( "Show away contacts" ), QString::null, this, SLOT( showAway() ), tools );
 	b_showAway->setToggleButton( true );
 	b_showAway->setOn( roster->isShowAway() );
@@ -281,11 +291,14 @@ void QTlen::addToolBars()
 	menuPopup->insertItem( QIconSet(takePixmap("msg")), tr("Message"), this, SLOT( newMessage() ) );
 	menuPopup->insertItem( QIconSet(takePixmap("msg-chat")), tr("Chat"), this, SLOT( newChatMessage() ) );
 	menuPopup->insertSeparator();
+	menuPopup->insertItem( QIconSet(takePixmap("history")), tr("History"), 8/*, history_manager, SLOT( show() )*/ );
 	menuPopup->insertItem( QIconSet(takePixmap("settings")), tr("Settings"), this, SLOT( settings() ) );
 	menuPopup->insertSeparator();
 	menuPopup->insertItem( QIconSet(takePixmap("close")), tr("Hide program"), this, SLOT( showHide() ) );
 	menuPopup->insertItem( QIconSet(takePixmap("exit")), tr("Exit program"), this, SLOT( quit() ) );
-
+	
+	menuPopup->setItemEnabled( 8, false );
+	
 	statusPopup = new QPopupMenu( this, "Popumenu for status" );
 	statusPopup->insertItem( QIconSet(takePixmap("online")), tr( "Available" ), 0 );
 	statusPopup->insertItem( QIconSet(takePixmap("chat")), tr( "Free for Chat" ), 1 );
@@ -305,7 +318,7 @@ void QTlen::addToolBars()
 
 void QTlen::showHide()
 {
-	if( isShown() )
+	if( !isMinimized() && isActiveWindow() )
 	{
 		hide();
 		if( tray )
@@ -313,7 +326,11 @@ void QTlen::showHide()
 	}
 	else
 	{
-		showNormal();
+		if( isShown() && !isMinimized() )
+			setActiveWindow();
+		else
+			showNormal();
+		
 		if( tray )
 			trayPopup->changeItem( 1, tr( "Hide" ) );
 	}
@@ -329,42 +346,23 @@ void QTlen::status(int id)
 {
 	PresenceManager::PresenceStatus status = presence_manager->getStatus();
 	QString description = presence_manager->getDescription();
-
-	switch( id )
+	
+	if( id < 7 )
 	{
-		case 0:
-			status = PresenceManager::Available;
-			break;
-		case 1:
-			status = PresenceManager::Chat;
-			break;
-		case 2:
-			status = PresenceManager::Away;
-			break;
-		case 3:
-			status = PresenceManager::ExtAway;
-			break;
-		case 4:
-			status = PresenceManager::Dnd;
-			break;
-		case 5:
-			status = PresenceManager::Invisible;
-			break;
-		case 6:
-			status = PresenceManager::Unavailable;
-			break;
-		case 7:
-			bool ok;
-			QString desc = QInputDialog::getText(
-						"QTlen", tr("Status:"), QLineEdit::Normal,
-						presence_manager->getDescription(), &ok, this );
-			if(ok)
-				description = desc;
-			else
-				return;
-			break;
+		status = (PresenceManager::PresenceStatus)id;
 	}
-
+	else
+	{
+		bool ok;
+		QString desc = QInputDialog::getText(
+				"QTlen", tr("Status:"), QLineEdit::Normal,
+		presence_manager->getDescription(), &ok, this );
+		if(ok)
+			description = desc;
+		else
+			return;
+	}
+	
 	presence_manager->setStatus(status, description);
 }
 
@@ -448,6 +446,12 @@ void QTlen::addContact()
 void QTlen::seekContact()
 {
 	pubdir_manager->showDialog();
+}
+
+void QTlen::mute()
+{
+	sound_manager->setMute( !sound_manager->isMute() );
+	b_mute->setOn( sound_manager->isMute() );
 }
 
 void QTlen::showAway()
