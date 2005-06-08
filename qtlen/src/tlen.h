@@ -56,6 +56,14 @@ class QTlenParser : public QXmlDefaultHandler
 		bool stream;
 };
 
+class Paser
+{
+	public:
+		Paser();
+		
+		receiveNode( QDomNode* );
+};
+
 class Tlen : public QObject
 {
 	Q_OBJECT
