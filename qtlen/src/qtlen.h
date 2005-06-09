@@ -23,18 +23,14 @@
 
 #include <qwidget.h>
 #include <qmainwindow.h>
-#include <qlistbox.h>
-#include <qpushbutton.h>
-#include <qpixmap.h>
 #include <qstring.h>
-#include <qstringlist.h>
-#include <qpopupmenu.h>
-#include <qtoolbutton.h>
 
-#include "tlen.h"
 #include "presence_manager.h"
-#include "roster_box.h"
-#include "trayicon.h"
+
+class RosterBox;
+class TrayIcon;
+class QPopupMenu;
+class QToolButton;
 
 class QTlen : public QMainWindow
 {
@@ -58,7 +54,7 @@ class QTlen : public QMainWindow
 		RosterBox *roster;
 		TrayIcon *tray;
 		QPopupMenu *menuPopup, *statusPopup, *trayPopup;
-		QToolButton *b_showAway, *b_showOffline, *menuButton, *statusButton;
+		QToolButton *b_mute, *b_showAway, *b_showOffline, *menuButton, *statusButton;
 		bool v_tray, v_quit;
 		
 	private slots:
@@ -81,6 +77,8 @@ class QTlen : public QMainWindow
 		
 		void addContact();
 		void seekContact();
+		
+		void mute();
 		
 		void showAway();
 		void showOffline();
