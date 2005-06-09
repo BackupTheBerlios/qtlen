@@ -59,9 +59,9 @@ class QTlenParser : public QXmlDefaultHandler
 class Paser
 {
 	public:
-		Paser();
+		Paser() {}
 		
-		receiveNode( QDomNode* );
+		void receiveNode( QDomNode* ) {}
 };
 
 class Tlen : public QObject
