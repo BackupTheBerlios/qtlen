@@ -149,7 +149,7 @@ PubdirManager::PubdirManager( QWidget *parent, const char *name )
 	
 	list = new QListView( rightBox );
 	list->setAllColumnsShowFocus( true );
-	list->setSorting( -1 );
+	list->setSorting( 2 );
 	list->addColumn( tr( "Voice" ), 18 );
 	list->addColumn( tr( "Video" ), 18 );
 	list->addColumn( tr( "ID" ), 150 );
@@ -221,13 +221,10 @@ void PubdirManager::showDialog()
 
 void PubdirManager::showPersonalInformation()
 {
-	if( !personalInfo )
-		personalInfo = new PubdirManager::PersonalInformation();
+	if( pubdir_manager->personalInfo == NULL )
+		pubdir_manager->personalInfo = new PubdirManager::PersonalInformation();
 	
-	if( personalInfo->isActiveWindow() )
-		personalInfo->setActiveWindow();
-	else
-		personalInfo->show();
+	pubdir_manager->personalInfo->show();
 }
 
 void PubdirManager::receiveNode( QDomNode node )
@@ -258,7 +255,14 @@ void PubdirManager::receiveNode( QDomNode node )
 		{
 			QDomNodeList queryChilds = query.childNodes();
 			
-			for ( int n = (int)queryChilds.count(); n >= 0; n-- )
+			int max;
+			
+			if( (int)queryChilds.count() >= 20 )
+				max = 20;
+			else
+				max = (int)queryChilds.count();
+			
+			for ( int n = 0; n <= max; n++ )
 			{
 				QDomElement item = queryChilds.item( n ).toElement();
 				
@@ -404,7 +408,7 @@ void PubdirManager::receiveNode( QDomNode node )
 				{
 					setDisabledAll( false );
 					
-					if( list->childCount() >= 20 )
+					if( queryChilds.count() >= 20 )
 						b_next->setEnabled( true );
 					else
 						b_next->setEnabled( false );
