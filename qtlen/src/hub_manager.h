@@ -43,7 +43,6 @@ class HubManager : public QObject
 	private slots:
 		void connected();
 		void readyRead();
-		void connectionClosed();
 		void error( int );
 		
 	signals:

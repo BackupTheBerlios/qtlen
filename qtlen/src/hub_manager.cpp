@@ -44,7 +44,6 @@ HubManager::HubManager()
 	socket = new QSocket( this );
 	connect( socket, SIGNAL( connected() ), this, SLOT( connected() ) );
 	connect( socket, SIGNAL( readyRead() ), this, SLOT( readyRead() ) );
-	connect( socket, SIGNAL( connectionClosed() ), this, SLOT( connectionClosed() ) );
 	connect( socket, SIGNAL( error( int ) ), this, SLOT( error( int ) ) );
 
 	if( settings.readBoolEntry( "/useProxy" ) )
@@ -106,11 +105,8 @@ void HubManager::readyRead()
 	}
 	tlen_manager->setHost( hostname, hostport );
 	
-	qDebug( QString( "Ustaiono Host: %1\nPort: %2" ).arg( hostname ).arg( hostport ) );
-}
-
-void HubManager::connectionClosed()
-{
+	socket->close();
+	
 	emit finished();
 }
 
