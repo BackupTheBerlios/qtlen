@@ -75,23 +75,21 @@ bool QTlenParser::endDocument()
 void Tlen::initModule()
 {
 	tlen_manager = new Tlen();
-
+	
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
-
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
+	
 	settings.beginGroup( "/connection" );
-
+	
 	tlen_manager->setUserPass( settings.readEntry("/username"), settings.readEntry("/password") );
-
+	
 	if( settings.readBoolEntry( "/autoConnect", false ) )
 	{
 		presence_manager->setStatus( (PresenceManager::PresenceStatus)settings.readNumEntry( "/defaultStatus" ),
 					      settings.readEntry( "/defaultDescription" ) );
 	}
 	
-	HubManager::initModule();
-
-	settings.endGroup();
+	settings.resetGroup();
 }
 
 Tlen::Tlen() : QObject()
@@ -103,16 +101,14 @@ Tlen::Tlen() : QObject()
 	pingtimer = new QTimer();
 	
 	connect( socket, SIGNAL( connected() ), SLOT( socketConnected() ) );
-	connect( this, SIGNAL( connected() ), SLOT( tlenConnected() ) );
 	connect( socket, SIGNAL( connectionClosed() ), SLOT( socketConnectionClosed() ) );
 	connect( socket, SIGNAL( readyRead() ), SLOT( socketReadyRead() ) );
 	connect( socket, SIGNAL( error( int ) ), SLOT( socketError( int ) ) );
+	
 	connect( pingtimer, SIGNAL( timeout() ), SLOT( sendPing() ) );
 	
+	connect( this, SIGNAL( connected() ), SLOT( tlenConnected() ) );
 	connect( this, SIGNAL( disconnected() ), presence_manager, SLOT( disconnected() ) );
-	
-	hostname = "s1.tlen.pl";
-	hostport = 443;
 }
 
 Tlen::~Tlen()
@@ -126,62 +122,61 @@ Tlen::~Tlen()
 		delete errortimer;
 }
 
-void Tlen::connectToServer()
+void Tlen::setUserPass( const QString &user, const QString &pass )
 {
-	if( username.isEmpty() || password.isEmpty() )
-	{
-		QMessageBox::warning( NULL, "QTlen", tr("Please enter username and/or password!") );
-		SettingsDialog::showDialog();
-		return;
-	}
-	
-	//hub_manager->getServerInfo();
-	
-	emit connecting();
-	
-	socket->connectToHost(hostname,hostport);
+	username = user;
+	password = pass;
 }
 
-void Tlen::disconnect()
+void Tlen::setHost( const QString &name, int port )
 {
-	if(!isConnected())
-		return;
-	
-	pingtimer->stop();
-	
-	if(state == Tlen::Connected)
-	{
-		QCString data;
-		
-		data = "</s>";
-		if( socket->writeBlock( data.data(), data.length() ) == (int)data.length() )
-			std::cout << "Write on socket: " << data << std::endl;
-	}
-	
-	socket->close();
-	socketConnectionClosed();
+	hostname = name;
+	hostport = port;
 }
 
-bool Tlen::tlenLogin()
+QString Tlen::getLogin()
 {
-	QCString data;
-	
-	data += "<iq type='set' id='";
-	data += sid.latin1();
-	data += "'><query xmlns='jabber:iq:auth'><username>";
-	data += username.latin1();
-	data += "</username><digest>";
-	data += tlen_hash( password.ascii(), sid.ascii() );
-	data += "</digest><resource>t</resource></query></iq>";
-	
-	bool ok;
-	
-	ok = ( socket->writeBlock( data.data(), data.length() ) == (int)data.length() );
-	
-	if(ok)
-		std::cout << "Write on socket: " << data << std::endl;
-	
-	return ok;
+	return username;
+}
+
+bool Tlen::isConnected()
+{
+	qDebug("Tlen::isConnected()");
+
+	switch(state)
+	{
+		case Tlen::ConnectingToHub:
+			return false;
+			break;
+		case Tlen::Connecting:
+			return true;
+			break;
+		case Tlen::Connected:
+			return true;
+			break;
+		case Tlen::ErrorDisconnected:
+			return false;
+			break;
+		case Tlen::Disconnected:
+			return false;
+			break;
+	}
+
+	return false;
+
+}
+
+QString Tlen::getJid()
+{
+	if( username.isEmpty() )
+		return tr("No user");
+	else
+		return username+"@tlen.pl";
+}
+
+QString Tlen::getSid()
+{
+	return sid;
 }
 
 bool Tlen::writeXml( const QDomDocument& doc )
@@ -289,6 +284,101 @@ void Tlen::event(QDomNode node)
 	}
 }
 
+bool Tlen::tlenLogin()
+{
+	QCString data;
+	
+	data += "<iq type='set' id='";
+	data += sid.latin1();
+	data += "'><query xmlns='jabber:iq:auth'><username>";
+	data += username.latin1();
+	data += "</username><digest>";
+	data += tlen_hash( password.ascii(), sid.ascii() );
+	data += "</digest><resource>t</resource></query></iq>";
+	
+	bool ok;
+	
+	ok = ( socket->writeBlock( data.data(), data.length() ) == (int)data.length() );
+	
+	if(ok)
+		std::cout << "Write on socket: " << data << std::endl;
+	
+	return ok;
+}
+
+void Tlen::beforeConnect()
+{
+	HubManager::initModule();
+	connect( hub_manager, SIGNAL( finished() ), this, SLOT( connectToServer()() ) );
+}
+
+void Tlen::connectToServer()
+{
+	if( username.isEmpty() || password.isEmpty() )
+	{
+		QMessageBox::warning( NULL, "QTlen", tr("Please enter username and/or password!") );
+		SettingsDialog::showDialog();
+		return;
+	}
+	
+	emit connecting();
+	
+	socket->connectToHost( hostname, hostport );
+}
+
+void Tlen::disconnect()
+{
+	if(!isConnected())
+		return;
+	
+	pingtimer->stop();
+	
+	if(state == Tlen::Connected)
+	{
+		QCString data;
+		
+		data = "</s>";
+		if( socket->writeBlock( data.data(), data.length() ) == (int)data.length() )
+			std::cout << "Write on socket: " << data << std::endl;
+	}
+	
+	socket->close();
+	socketConnectionClosed();
+}
+
+void Tlen::sendPing()
+{
+	qDebug("Tlen::sendPing()");
+	
+	QString data = "  \t  ";
+	
+	socket->writeBlock( data.latin1(), data.length() );
+}
+
+void Tlen::tlenConnected()
+{
+	state = Tlen::Connected;
+	presence_manager->setStatus( presence_manager->getStatus(), presence_manager->getDescription() );
+}
+
+void Tlen::socketConnected()
+{
+	emit connecting();
+	
+	QString data = "<s v=\"7\" t=\"05170402\">";
+	
+	state = Tlen::Connecting;
+	
+	if( socket->writeBlock( data.latin1(), data.length() ) == (int)data.length() )
+		std::cout << "Write on socket: " << data << std::endl;
+}
+
+void Tlen::socketConnectionClosed()
+{
+	state = Tlen::Disconnected;
+	emit disconnected();
+}
+
 void Tlen::socketError( int e )
 {
 	switch( e ) {
@@ -319,83 +409,4 @@ void Tlen::socketError( int e )
 		connectToServer();
 	
 	settings.endGroup();
-}
-
-void Tlen::socketConnectionClosed()
-{
-	state = Tlen::Disconnected;
-	emit disconnected();
-}
-
-bool Tlen::isConnected()
-{
-	qDebug("Tlen::isConnected()");
-
-	switch(state)
-	{
-		case Tlen::ConnectingToHub:
-			return false;
-			break;
-		case Tlen::Connecting:
-			return true;
-			break;
-		case Tlen::Connected:
-			return true;
-			break;
-		case Tlen::ErrorDisconnected:
-			return false;
-			break;
-		case Tlen::Disconnected:
-			return false;
-			break;
-	}
-
-	return false;
-
-}
-
-void Tlen::setUserPass( const QString &user, const QString &pass)
-{
-	username = user;
-	password = pass;
-}
-
-QString Tlen::getJid()
-{
-	if( username.isEmpty() )
-		return tr("No user");
-	else
-		return username+"@tlen.pl";
-}
-
-void Tlen::socketConnected()
-{
-	emit connecting();
-	
-	QString data = "<s v=\"7\" t=\"05170402\">";
-	
-	state = Tlen::Connecting;
-	
-	if( socket->writeBlock( data.latin1(), data.length() ) == (int)data.length() )
-		std::cout << "Write on socket: " << data << std::endl;
-}
-
-void Tlen::sendPing()
-{
-	qDebug("Tlen::sendPing()");
-	
-	QString data = "  \t  ";
-	
-	socket->writeBlock( data.latin1(), data.length() );
-}
-
-void Tlen::tlenConnected()
-{
-	state = Tlen::Connected;
-	presence_manager->setStatus( presence_manager->getStatus(), presence_manager->getDescription() );
-}
-
-QString Tlen::getSid()
-{
-	return sid;
 }

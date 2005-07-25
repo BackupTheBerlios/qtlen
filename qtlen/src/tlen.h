@@ -75,15 +75,14 @@ class Tlen : public QObject
 		Tlen();
 		~Tlen();
 		
-		void connectToServer();
-		void disconnect();
-		bool tlenLogin();
-		
 		bool writeXml( const QDomDocument& doc );
 		
 		void setUserPass( const QString &username, const QString &password );
+		void setHost( const QString &name, int port );
 		
 		bool isConnected();
+		
+		QString getLogin();
 		QString getJid();
 		QString getSid();
 
@@ -101,12 +100,19 @@ class Tlen : public QObject
 		QTimer *pingtimer, *errortimer;
 		
 		void event( QDomNode node );
+		bool tlenLogin();
 		
 		friend class PresenceManager;
 
 	private slots:
+		void beforeConnect();
+		void connectToServer();
+		void disconnect();
+		
 		void sendPing();
+		
 		void tlenConnected();
+		
 		void socketConnected();
 		void socketConnectionClosed();
 		void socketReadyRead();
@@ -116,8 +122,6 @@ class Tlen : public QObject
 		void connecting();
 		void connected();
 		void disconnected();
-		
-		void updateUserList();
 };
 
 extern Tlen* tlen_manager;
