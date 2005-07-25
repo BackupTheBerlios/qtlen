@@ -18,7 +18,11 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <qsocket.h>
 #include <qdom.h>
+#include <qregexp.h>
+#include <qdatetime.h>
+#include <qsettings.h>
 
 #include "hub_manager.h"
 
@@ -30,70 +34,90 @@ void HubManager::initModule()
 }
 
 HubManager::HubManager()
-	: QObject()
 {
-	socket = new QSocket();
-	
-	connect( socket, SIGNAL( connected() ), SLOT( connected() ) );
-	connect( socket, SIGNAL( readyRead() ), SLOT( readyRead() ) );
-	connect( socket, SIGNAL( error( int ) ), SLOT( error( int ) ) );
-}
+	QSettings settings;
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 
-HubManager::~ HubManager()
-{
+	settings.beginGroup( "/proxy" );
 	
-}
+	socket = new QSocket( this );
+	connect( socket, SIGNAL( connected() ), this, SLOT( connected() ) );
+	connect( socket, SIGNAL( readyRead() ), this, SLOT( readyRead() ) );
+	connect( socket, SIGNAL( connectionClosed() ), this, SLOT( connectionClosed() ) );
+	connect( socket, SIGNAL( error( int ) ), this, SLOT( error( int ) ) );
 
-void HubManager::getServerInfo()
-{
-	socket->connectToHost( "idi.tlen.pl", 80 );
+	if( settings.readBoolEntry( "/useProxy" ) )
+		socket->connectToHost( settings.readEntry( "/ip", "127.0.0.1" ), settings.readNumEntry( "/port", 80 ) );
+	else
+		socket->connectToHost( "idi.tlen.pl", 80 );
+	
+	settings.resetGroup();
 }
 
 void HubManager::connected()
 {
-	QString data;
-	data += "GET /4starters.php?u=identyfikator&v=10 HTTP/1.0\n\r";
-	data += "Host: idi.tlen.pl";
+	QSettings settings;
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
+
+	settings.beginGroup( "/proxy" );
 	
-	socket->writeBlock( data.ascii(), data.length() );
+	QString query = "GET ";
+	
+	if ( settings.readBoolEntry( "/useProxy" ) )
+		query += "http://idi.tlen.pl";
+	
+	query += QString( "/4starters.php?u=%1&v=10" ).arg( tlen_manager->getLogin() );
+	
+	query += " HTTP/1.1\r\n";
+	query += "Host: idi.tlen.pl\r\n";
+	query += "\r\n";
+	
+	socket->writeBlock( query.latin1(), query.length() );
+	
+	settings.resetGroup();
 }
 
 void HubManager::readyRead()
 {
 	QCString s;
-	s.resize( socket->bytesAvailable() );
+	
+	s.resize( socket->bytesAvailable() + 1 );
+	
 	socket->readBlock( s.data(), socket->bytesAvailable() );
 	
-	qDebug( s );
+	s = s.right( s.find( "\r\n\r\n" ) + 4 );
 	
-	/*QDomDocument doc;
+	QDomDocument doc;
+	
+	QString hostname = "s1.tlen.pl";
+	int hostport = 443;
+	
 	doc.setContent( s );
-	QDomNode root = doc.firstChild();
-	QDomElement element = root.toElement();
 	
-	if( root.nodeName() == "t" )
+	QDomElement root = doc.firstChild().toElement();
+	
+	if( root.tagName() == "t" )
 	{
-		QString server = "s1.tlen.pl", ip;
-		Q_UINT16 port = 443;
-		
-		if( element.hasAttribute( "s" ) )
-			server = element.attribute( "s" );
-		
-		if( element.hasAttribute( "p" ) )
-			port = element.attribute( "p" ).toInt();
-		
-		if( element.hasAttribute( "i" ) )
-			ip = element.attribute( "i" );
-		
-		emit serverInfo( server, port, ip );
+		if( root.hasAttribute( "s" ) )
+			hostname = root.attribute( "s", "s1.tlen.pl" );
+		if( root.hasAttribute( "p" ) )
+			hostport = root.attribute( "p", "443" ).toInt();
 	}
-	else
-		emit serverInfo( "s1.tlen.pl", 443, "" );*/
+	tlen_manager->setHost( hostname, hostport );
 	
-	socket->close();
+	qDebug( QString( "Ustaiono Host: %1\nPort: %2" ).arg( hostname ).arg( hostport ) );
+}
+
+void HubManager::connectionClosed()
+{
+	emit finished();
 }
 
 void HubManager::error( int )
 {
-	emit serverInfo( "s1.tlen.pl", 443, "" );
+	tlen_manager->setHost( "s1.tlen.pl", 443 );
+	
+	socket->close();
+	
+	emit finished();
 }

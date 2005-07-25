@@ -22,21 +22,20 @@
 #define HUB_MANAGER_H
 
 #include <qobject.h>
-#include <qsocket.h>
 #include <qstring.h>
 
 #include "tlen.h"
 
+class QSocket;
+
 class HubManager : public QObject
 {
 		Q_OBJECT
-	
+		
 	public:
 		static void initModule();
-		HubManager();
-		~HubManager();
 		
-		void getServerInfo();
+		HubManager();
 		
 	private:
 		QSocket *socket;
@@ -44,10 +43,11 @@ class HubManager : public QObject
 	private slots:
 		void connected();
 		void readyRead();
+		void connectionClosed();
 		void error( int );
 		
 	signals:
-		void serverInfo( QString host, Q_UINT16 port, QString ip );
+		void finished();
 };
 
 extern HubManager *hub_manager;
