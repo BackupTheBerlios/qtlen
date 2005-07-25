@@ -104,11 +104,12 @@ class Tlen : public QObject
 		
 		friend class PresenceManager;
 
-	private slots:
+	public slots:
 		void beforeConnect();
 		void connectToServer();
 		void disconnect();
 		
+	private slots:
 		void sendPing();
 		
 		void tlenConnected();

@@ -321,6 +321,13 @@ void Tlen::connectToServer()
 		return;
 	}
 	
+	if( hostname.isEmpty() || hostport == 0 )
+	{
+		beforeConnect();
+		
+		return;
+	}
+	
 	emit connecting();
 	
 	socket->connectToHost( hostname, hostport );
