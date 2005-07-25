@@ -25,7 +25,6 @@
 #include <qstring.h>
 #include <qwidget.h>
 #include <qmainwindow.h>
-#include <qtextbrowser.h>
 #include <qtextedit.h>
 #include <qpushbutton.h>
 #include <qdatetime.h>
@@ -33,7 +32,7 @@
 
 class QSplitter;
 class QLabel;
-
+class ChatViewer;
 
 class ChatEdit : public QTextEdit
 {
@@ -81,7 +80,7 @@ class Chat : public QMainWindow
 
 	private:
 		QSplitter *splitter;
-		QTextBrowser *message;
+		ChatViewer *message;
 		QMainWindow *editBox;
 		ChatEdit *edit;
 		QLabel *typing_notification;
@@ -94,6 +93,8 @@ class Chat : public QMainWindow
 		void setAutoSend();
 		
 		void sendSoundAlert();
+		
+		void doFlash( bool );
 		
 		void clean();
 		

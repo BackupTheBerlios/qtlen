@@ -27,8 +27,6 @@
 #include <qiconset.h>
 #include <qcolor.h>
 #include <qfont.h>
-#include <qnamespace.h>
-
 #include <qsplitter.h>
 #include <qtextbrowser.h>
 #include <qtextedit.h>
@@ -38,10 +36,17 @@
 #include <qtimer.h>
 
 #include "chat.h"
+#include "chat_viewer.h"
 #include "tlen.h"
 #include "utils.h"
 #include "message_manager.h"
 #include "roster_manager.h"
+
+#if defined( Q_WS_WIN )
+#include <windows.h>
+#elif defined ( Q_WS_X11 )
+#include<X11/Xutil.h>
+#endif
 
 ChatEdit::ChatEdit( bool a, QWidget *parent, const char *name )
 	: QTextEdit( parent, name )
@@ -100,7 +105,8 @@ Chat::Chat( QString j, QWidget *parent, const char *name )
 	
 	settings.beginGroup( "/look" );
 	
-	message = new QTextBrowser( splitter );
+	message = new ChatViewer( splitter );
+	message->setWrapPolicy( QTextEdit::AtWordOrDocumentBoundary );
 	message->setPaletteBackgroundColor( (QColor)settings.readEntry( "/bgColor", "#ffffff" ) );
 	message->setPaletteForegroundColor( (QColor)settings.readEntry( "/chatFontColor", "#ffffff" ) );
 	QFont font = this->font();
@@ -111,7 +117,7 @@ Chat::Chat( QString j, QWidget *parent, const char *name )
 	editBox = new QMainWindow( splitter, 0, 0 );
 	editBox->setDockMenuEnabled( false );
 	
-	edit = new ChatEdit( editBox );
+	edit = new ChatEdit( editBox );	
 	edit->setTextFormat( Qt::PlainText );
 	connect( edit, SIGNAL( enterPressed() ), SLOT( returnPressed() ) );
 	connect( edit, SIGNAL( keyPressed() ), SLOT( keyPressed() ) );
@@ -236,7 +242,7 @@ void Chat::addMessage( const QString &msg, const QDateTime &datetime )
 	
 	typingNotification( false );
 	
-	setActiveWindow();
+	doFlash( true );
 	
 	settings.endGroup();
 }
@@ -254,7 +260,7 @@ void Chat::addSystemMessage( const QString &msg, const QDateTime &datetime )
 	
 	message->append( "<font color='"+settings.readEntry( "/contactFontColor", "#0000ff" )+"'>[" + datetime.toString( "hh:mm:ss" ) + "] &lt;" + tr("System Message") + "&gt;</font> " + plain2rich( msg ) );
 	
-	setActiveWindow();
+	doFlash( true );
 	
 	settings.endGroup();
 }
@@ -325,6 +331,49 @@ void Chat::clean()
 		message->setText( QString::null );
 	}
 }
+
+#if defined( Q_WS_WIN )
+void Chat::doFlash( bool yes )
+{
+	if(yes) {
+		flashAnimate(); // kick the first one immediately
+	}
+}
+#elif defined( Q_WS_X11 )
+void Chat::doFlash( bool yes )
+{
+	Display *xdisplay = qt_xdisplay();
+	Window rootwin = qt_xrootwin();
+	
+	static Atom demandsAttention = XInternAtom( xdisplay, "_NET_WM_STATE_DEMANDS_ATTENTION", true );
+	static Atom wmState = XInternAtom( xdisplay, "_NET_WM_STATE", true );
+	
+	XEvent e;
+	e.xclient.type = ClientMessage;
+	e.xclient.message_type = wmState;
+	e.xclient.display = xdisplay;
+	e.xclient.window = winId();
+	e.xclient.format = 32;
+	e.xclient.data.l[1] = demandsAttention;
+	e.xclient.data.l[2] = 0l;
+	e.xclient.data.l[3] = 0l;
+	e.xclient.data.l[4] = 0l;
+	
+	if( yes )
+	{
+		e.xclient.data.l[0] = 1;
+	}
+	else
+	{
+		e.xclient.data.l[0] = 0;
+	}
+	XSendEvent(xdisplay, rootwin, False, (SubstructureRedirectMask | SubstructureNotifyMask), &e);
+}
+#else
+void Chat::doFlash( bool )
+{
+}
+#endif
 
 void Chat::returnPressed()
 {
