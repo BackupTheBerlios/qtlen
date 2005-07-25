@@ -286,30 +286,45 @@ void Tlen::event(QDomNode node)
 
 bool Tlen::tlenLogin()
 {
-	QCString data;
+	if( !tlen_manager->isConnected() )
+		return false;
 	
-	data += "<iq type='set' id='";
-	data += sid.latin1();
-	data += "'><query xmlns='jabber:iq:auth'><username>";
-	data += username.latin1();
-	data += "</username><digest>";
-	data += tlen_hash( password.ascii(), sid.ascii() );
-	data += "</digest><resource>t</resource></query></iq>";
+	QDomDocument doc;
 	
-	bool ok;
+	QDomElement iq = doc.createElement( "iq" );
+	iq.setAttribute( "type", "set" );
+	iq.setAttribute( "id", sid );
+	doc.appendChild( iq );
 	
-	ok = ( socket->writeBlock( data.data(), data.length() ) == (int)data.length() );
+	QDomElement query = doc.createElement( "query" );
+	query.setAttribute( "xmlns", "jabber:iq:auth" );
+	iq.appendChild( query );
 	
-	if(ok)
-		std::cout << "Write on socket: " << data << std::endl;
+	QDomElement username_node = doc.createElement( "username" );
+	query.appendChild( username_node );
 	
-	return ok;
+	QDomText text = doc.createTextNode( username );
+	username_node.appendChild( text );
+	
+	QDomElement digest = doc.createElement( "digest" );
+	query.appendChild( digest );
+	
+	text = doc.createTextNode( tlen_hash( password.ascii(), sid.ascii() ) );
+	digest.appendChild( text );
+	
+	QDomElement resource = doc.createElement( "resource" );
+	query.appendChild( resource );
+	
+	text = doc.createTextNode( "t" );
+	resource.appendChild( text );
+	
+	return tlen_manager->writeXml( doc );
 }
 
 void Tlen::beforeConnect()
 {
 	HubManager::initModule();
-	connect( hub_manager, SIGNAL( finished() ), this, SLOT( connectToServer()() ) );
+	connect( hub_manager, SIGNAL( finished() ), this, SLOT( connectToServer() ) );
 }
 
 void Tlen::connectToServer()
