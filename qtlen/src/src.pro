@@ -29,7 +29,9 @@ HEADERS += qtlen.h \
            editdlg.h \
            history_manager.h \
            sound_manager.h \
-           hub_manager.h 
+           hub_manager.h \
+           chat_viewer.h \
+           chat_style.h 
 SOURCES += qtlen.cpp \
            main.cpp \
            tlen.cpp \
@@ -47,7 +49,9 @@ SOURCES += qtlen.cpp \
            editdlg.cpp \
            history_manager.cpp \
            sound_manager.cpp \
-           hub_manager.cpp 
+           hub_manager.cpp \
+           chat_viewer.cpp \
+           chat_style.cpp 
 TARGET = ../bin/qtlen 
 CONFIG += debug \
           warn_on \
