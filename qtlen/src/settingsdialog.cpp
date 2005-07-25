@@ -33,6 +33,7 @@
 #include <qapplication.h>
 #include <qfiledialog.h>
 #include <qdir.h>
+#include <qspinbox.h>
 
 #include "qtlen.h"
 #include "settingsdialog.h"
@@ -540,9 +541,8 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	proxyIp = new QLineEdit( settings.readEntry( "/ip", "127.0.0.1" ), proxyBox );
 	
 	(void)new QLabel( tr("Port:"), proxyBox );
-	proxyPort = new QLineEdit( QString::number( settings.readNumEntry( "/port", 80 ) ), proxyBox );
-	QIntValidator v( proxyPort );
-	proxyPort->setValidator( &v );
+	proxyPort = new QSpinBox( 0, 10000, 1, proxyBox );
+	proxyPort->setValue( settings.readNumEntry( "/port", 80 ) );
 	
 	(void)new QLabel( tr("Username:"), proxyBox );
 	proxyUsername = new QLineEdit( settings.readEntry( "/username" ), proxyBox );
@@ -677,6 +677,16 @@ void SettingsDialog::apply()
 	sound_manager->update();
 	
 	settings.resetGroup();
+	settings.beginGroup( "/proxy" );
+	
+	settings.writeEntry( "/useProxy", proxyBox->isChecked() );
+	
+	settings.writeEntry( "/ip", proxyIp->text() );
+	settings.writeEntry( "/port", proxyPort->value() );
+	settings.writeEntry( "/username", proxyUsername->text() );
+	settings.writeEntry( "/password", proxyPassword->text() );
+	
+	settings.resetGroup();
 	
 	if( email->isChecked() )
 		connect( msg_manager, SIGNAL( gotEmail( QString, const QString& ) ), msg_manager, SLOT( mailMessage( QString, const QString& ) ) );
@@ -787,9 +797,8 @@ void SettingsDialog::cancel()
 	
 	proxyBox->setChecked( settings.readBoolEntry( "/useProxy" ) );
 	
-	proxyIp->setText( settings.readEntry( "/ip", "0.0.0.0" ) );
-	QString port;
-	proxyPort->setText( port.setNum(settings.readNumEntry( "/port", 0 )) );
+	proxyIp->setText( settings.readEntry( "/ip", "127.0.0.1" ) );
+	proxyPort->setValue( settings.readNumEntry( "/port", 80 ) );
 	proxyUsername->setText( settings.readEntry( "/username" ) );
 	proxyPassword->setText( settings.readEntry( "/password" ) );
 	

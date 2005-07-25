@@ -32,6 +32,8 @@
 
 #include "tlen.h"
 
+class QSpinBox;
+
 class SettingsDialog : public QTabDialog
 {
 		Q_OBJECT
@@ -70,7 +72,8 @@ class SettingsDialog : public QTabDialog
 		
 		// Proxy
 		QGroupBox *proxyBox;
-		QLineEdit *proxyIp, *proxyPort, *proxyUsername, *proxyPassword;
+		QLineEdit *proxyIp, *proxyUsername, *proxyPassword;
+		QSpinBox *proxyPort;
 		
 	private slots:
 		void apply();
