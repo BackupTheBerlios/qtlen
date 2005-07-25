@@ -267,8 +267,11 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	sndLay->addWidget( label, 0, 0 );
 	
 	player = new QLineEdit( sounds );
-#ifdef Q_OS_WIN
+#if defined( Q_OS_WIN )
 	player->setText( tr( "Microsoft Windows multimedia system" ) );
+	player->setDisabled( true );
+#elif defined( Q_OS_MACX )
+	player->setText( tr( "Mac OS X multimedia system" ) );
 	player->setDisabled( true );
 #else
 	player->setText( settings.readEntry( "/player", "play" ) );
@@ -534,11 +537,10 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	proxyBox->setChecked( settings.readBoolEntry( "/useProxy" )  );
 	
 	(void)new QLabel( tr("IP address:"), proxyBox );
-	proxyIp = new QLineEdit( settings.readEntry( "/ip", "0.0.0.0" ), proxyBox );
+	proxyIp = new QLineEdit( settings.readEntry( "/ip", "127.0.0.1" ), proxyBox );
 	
 	(void)new QLabel( tr("Port:"), proxyBox );
-	QString port;
-	proxyPort = new QLineEdit( port.setNum(settings.readNumEntry( "/port", 0 )), proxyBox );
+	proxyPort = new QLineEdit( QString::number( settings.readNumEntry( "/port", 80 ) ), proxyBox );
 	QIntValidator v( proxyPort );
 	proxyPort->setValidator( &v );
 	

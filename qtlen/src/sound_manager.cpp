@@ -146,7 +146,7 @@ void SoundManager::play( const QString &fileName )
 	qDebug( "Play: " + fileName );
 	if( !v_mute )
 	{
-#ifdef Q_OS_WIN
+#if defined( Q_OS_WIN ) || defined( Q_OS_MACX )
 		QSound::play( fileName );
 #else
 		QSettings settings;
