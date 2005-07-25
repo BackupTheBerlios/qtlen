@@ -30,7 +30,8 @@ HubManager *hub_manager = NULL;
 
 void HubManager::initModule()
 {
-	hub_manager = new HubManager();
+	if( !hub_manager )
+		hub_manager = new HubManager();
 }
 
 HubManager::HubManager()
