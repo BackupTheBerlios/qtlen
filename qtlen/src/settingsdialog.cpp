@@ -69,7 +69,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	setIcon( takePixmap("settings") );
 	
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 	
 	connection = new QWidget( this );
 	settings.beginGroup( "/connection" );
@@ -566,7 +566,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 void SettingsDialog::apply()
 {
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 	
 	settings.beginGroup( "/connection" );
 	
@@ -702,7 +702,7 @@ void SettingsDialog::apply()
 void SettingsDialog::cancel()
 {
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 	
 	settings.beginGroup( "/connection" );
 	
