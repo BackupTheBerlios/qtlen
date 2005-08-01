@@ -45,7 +45,10 @@ class QTlen : public QMainWindow
 		void updateTrayIcon();
 		
 	protected:
-		void keyPressEvent( QKeyEvent * e );
+		void keyPressEvent( QKeyEvent* );
+		
+		void showEvent( QShowEvent* );
+		void hideEvent( QHideEvent* );
 		void closeEvent( QCloseEvent* );
 		
 	private:

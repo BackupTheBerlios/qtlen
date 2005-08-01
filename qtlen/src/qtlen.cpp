@@ -30,6 +30,7 @@
 #include <qiconset.h>
 #include <qpoint.h>
 #include <qcursor.h>
+#include <qrect.h>
 
 #include "qtlen.h"
 #include "tlen.h"
@@ -51,14 +52,14 @@ QTlen::QTlen( QWidget *parent, const char *name )
 	  v_quit( false )
 {
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 	
 	settings.beginGroup( "/window" );
 	
 	setGeometry( settings.readNumEntry( "/main/xpos", 50 ),
-			settings.readNumEntry( "/main/ypos", 50 ),
-			settings.readNumEntry( "/main/width", 225 ),
-			settings.readNumEntry( "/main/height", 450 ) );
+		     settings.readNumEntry( "/main/ypos", 50 ),
+		     settings.readNumEntry( "/main/width", 225 ),
+		     settings.readNumEntry( "/main/height", 450 ) );
 	
 	settings.resetGroup();
 	
@@ -149,7 +150,7 @@ void QTlen::updateTrayIcon()
 	if( v_tray )
 	{
 		QSettings settings;
-		settings.setPath( "qtlen.sf.net", "QTlen" );
+		settings.setPath( "qtlen.berlios.de", "QTlen" );
 		
 		settings.beginGroup( "/general" );
 		
@@ -199,14 +200,36 @@ QTlen::~QTlen()
 	
 }
 
-void QTlen::keyPressEvent( QKeyEvent * e )
+void QTlen::keyPressEvent( QKeyEvent* ke )
 {
-	if( e->key() == Key_Escape )
+	if( ke->key() == Qt::Key_Escape )
 	{
 		close();
 	}
+#if defined( Q_WS_MAC )
+	else if(e->key() == Qt::Key_W && e->state() & Qt::ControlButton)
+	{
+		close();
+	}
+#endif
 	
-	QMainWindow::keyPressEvent( e );
+	QMainWindow::keyPressEvent( ke );
+}
+
+void QTlen::showEvent( QShowEvent* se )
+{
+	QMainWindow::showEvent( se );
+	
+	if( tray )
+		trayPopup->changeItem( 1, tr( "Hide" ) );
+}
+
+void QTlen::hideEvent( QHideEvent* he )
+{
+	QMainWindow::hideEvent( he );
+	
+	if( tray )
+		trayPopup->changeItem( 1, tr( "Show" ) );
 }
 
 void QTlen::closeEvent( QCloseEvent* ce )
@@ -214,16 +237,24 @@ void QTlen::closeEvent( QCloseEvent* ce )
 	if( v_quit )
 	{
 		QSettings settings;
-		settings.setPath( "qtlen.sf.net", "QTlen" );
+		settings.setPath( "qtlen.berlios.de", "QTlen" );
 		
 		settings.beginGroup( "/window" );
 		
-		showNormal();
-		
-		settings.writeEntry( "/main/xpos", x() );
-		settings.writeEntry( "/main/ypos", y() );
-		settings.writeEntry( "/main/width", width() );
-		settings.writeEntry( "/main/height", height() );
+		if( isShown() )
+		{
+			settings.writeEntry( "/main/xpos", x() );
+			settings.writeEntry( "/main/ypos", y() );
+			settings.writeEntry( "/main/width", width() );
+			settings.writeEntry( "/main/height", height() );
+		}
+		else
+		{
+			settings.writeEntry( "/main/xpos", mapToGlobal(QPoint(0,0)).x() );
+			settings.writeEntry( "/main/ypos", mapToGlobal(QPoint(0,0)).y() );
+			settings.writeEntry( "/main/width", frameGeometry().width() );
+			settings.writeEntry( "/main/height", frameGeometry().height() );
+		}
 		
 		settings.resetGroup();
 		
@@ -318,21 +349,23 @@ void QTlen::addToolBars()
 
 void QTlen::showHide()
 {
-	if( !isMinimized() && isActiveWindow() )
+	if( tray )
 	{
-		hide();
-		if( tray )
-			trayPopup->changeItem( 1, tr( "Show" ) );
+		if( !isMinimized() && isActiveWindow() )
+		{
+			hide();
+		}
+		else
+		{
+			if( isShown() && !isMinimized() )
+				setActiveWindow();
+			else
+				showNormal();
+		}
 	}
 	else
 	{
-		if( isShown() && !isMinimized() )
-			setActiveWindow();
-		else
-			showNormal();
-		
-		if( tray )
-			trayPopup->changeItem( 1, tr( "Hide" ) );
+		close();
 	}
 }
 
@@ -369,7 +402,7 @@ void QTlen::status(int id)
 void QTlen::statusChanged( PresenceManager::PresenceStatus status, const QString &description )
 {
 	QSettings settings;
-	settings.setPath( "qtlen.sf.net", "QTlen" );
+	settings.setPath( "qtlen.berlios.de", "QTlen" );
 	
 	settings.beginGroup( "/general" );
 	
@@ -401,7 +434,7 @@ void QTlen::statusChanged( PresenceManager::PresenceStatus status, const QString
 
 void QTlen::trayClicked( const QPoint&, int button )
 {
-	if( button == LeftButton )
+	if( button == Qt::LeftButton )
 	{
 		showHide();
 	}
