@@ -260,7 +260,7 @@ void PresenceManager::subscribeContact( QString jid ) //Kto¶ wysy³a pro¶bê o sub
 {
 	int index = roster_manager->findContact( jid );
 	
-	if( roster_manager->roster[ index ].subscription == "both" )
+	if( roster_manager->roster[ index ].subscription == "both" || roster_manager->roster[ index ].subscription == "to" )
 	{
 		subscribedMe( jid );
 		return;
