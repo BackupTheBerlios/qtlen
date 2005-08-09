@@ -74,7 +74,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	connection = new QWidget( this );
 	settings.beginGroup( "/connection" );
 	
-	QGridLayout *accLay = new QGridLayout( connection, 5, 1 );
+	QGridLayout *accLay = new QGridLayout( connection, 5, 1, 5 );
 	
 	addTab( connection, tr("Connection") );
 	
@@ -127,7 +127,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	general = new QWidget( this );
 	settings.beginGroup( "/general" );
 	
-	QGridLayout *genLay = new QGridLayout( general, 10, 2 );
+	QGridLayout *genLay = new QGridLayout( general, 10, 2, 5 );
 	
 	addTab( general, tr("General") );
 	
@@ -144,6 +144,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 		language->setCurrentItem( 1 );
 	else
 		language->setCurrentItem( 0 );
+	language->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Fixed );
 	
 	genLay->addWidget( language, 0, 1 );
 	
@@ -180,7 +181,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	look = new QWidget( this );
 	settings.beginGroup( "/look" );
 	
-	QGridLayout *lookLay = new QGridLayout( look, 6, 1 );
+	QGridLayout *lookLay = new QGridLayout( look, 6, 1, 5 );
 	
 	addTab( look, tr("Look") );
 	
@@ -258,7 +259,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	sounds = new QWidget( this );
 	settings.beginGroup( "/sounds" );
 	
-	QGridLayout *sndLay = new QGridLayout( sounds, 8, 2 );
+	QGridLayout *sndLay = new QGridLayout( sounds, 8, 2, 5 );
 	
 	addTab( sounds, tr("Sounds") );
 	
@@ -529,7 +530,7 @@ SettingsDialog::SettingsDialog( QWidget *parent, const char *name )
 	proxy = new QWidget( this );
 	settings.beginGroup( "/proxy" );
 	
-	QGridLayout *proLay = new QGridLayout( proxy, 3, 1 );
+	QGridLayout *proLay = new QGridLayout( proxy, 3, 1, 5 );
 	
 	addTab( proxy, tr("Proxy") );
 	
