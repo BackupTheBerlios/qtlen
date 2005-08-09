@@ -125,6 +125,9 @@ Chat::Chat( QString j, QWidget *parent, const char *name )
 	edit->setPaletteForegroundColor( (QColor)settings.readEntry( "/chatFontColor", "#ffffff" ) );
 	edit->setFont( font );
 	
+	splitter->setFocusProxy( edit );
+	message->setFocusProxy( edit );
+	
 	settings.resetGroup();
 	
 	editBox->setCentralWidget( edit );
