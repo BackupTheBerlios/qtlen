@@ -85,6 +85,7 @@ Message::Message( QString j, MType t, QWidget *parent, const char *name )
 		sendAs->insertItem( takePixmap( "msg" ), tr("Normal") );
 		sendAs->insertItem( takePixmap( "msg-chat" ), tr("Chat") );
 		sendAs->setCurrentItem( 0 );
+		sendAs->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Fixed );
 		topLayout->addWidget( sendAs );
 	}
 	else if( mtype == Message::Revice )
