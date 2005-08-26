@@ -202,16 +202,14 @@ QTlen::~QTlen()
 
 void QTlen::keyPressEvent( QKeyEvent* ke )
 {
-	if( ke->key() == Qt::Key_Escape )
-	{
-		close();
-	}
+	if( ke->key() == Qt::Key_Escape
 #if defined( Q_WS_MAC )
-	else if(e->key() == Qt::Key_W && e->state() & Qt::ControlButton)
+	    || ( e->key() == Qt::Key_W && e->state() & Qt::ControlButton )
+#endif
+	  )
 	{
 		close();
 	}
-#endif
 	
 	QMainWindow::keyPressEvent( ke );
 }
@@ -220,7 +218,7 @@ void QTlen::showEvent( QShowEvent* se )
 {
 	QMainWindow::showEvent( se );
 	
-	if( tray )
+	if( v_tray )
 		trayPopup->changeItem( 1, tr( "Hide" ) );
 }
 
@@ -228,7 +226,7 @@ void QTlen::hideEvent( QHideEvent* he )
 {
 	QMainWindow::hideEvent( he );
 	
-	if( tray )
+	if( v_tray )
 		trayPopup->changeItem( 1, tr( "Show" ) );
 }
 
