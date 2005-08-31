@@ -142,7 +142,7 @@ void PresenceManager::setStatus( PresenceManager::PresenceStatus s, const QStrin
 	
 	QString _s;
 	
-	if( s != PresenceManager::Invisible || s != PresenceManager::Unavailable )
+	if( s != PresenceManager::Invisible && s != PresenceManager::Unavailable )
 	{
 		_s = this->statusToShort( s );
 	}
